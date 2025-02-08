@@ -1,8 +1,10 @@
-import { Component, signal } from '@angular/core';
+import {Component, DestroyRef, inject, OnInit, signal} from '@angular/core';
 
 import { Place } from '../place.model';
 import { PlacesComponent } from '../places.component';
 import { PlacesContainerComponent } from '../places-container/places-container.component';
+import {HttpClient} from "@angular/common/http";
+import {map} from "rxjs";
 
 @Component({
   selector: 'app-available-places',
@@ -11,6 +13,27 @@ import { PlacesContainerComponent } from '../places-container/places-container.c
   styleUrl: './available-places.component.css',
   imports: [PlacesComponent, PlacesContainerComponent],
 })
-export class AvailablePlacesComponent {
+export class AvailablePlacesComponent implements OnInit {
+
+  httpClient = inject(HttpClient);
+  destroyRef = inject(DestroyRef)
+
   places = signal<Place[] | undefined>(undefined);
+
+  ngOnInit(): void {
+
+    const sub = this.httpClient
+      .get<{places: Place[]}>('http://localhost:3000/places')
+      .pipe(map(places => places.places))
+      .subscribe({
+      next: (response) => {this.places.set(response)},
+      error: (error) => {console.log(error)}
+    }
+    );
+
+
+    this.destroyRef.onDestroy(() => sub.unsubscribe());
+  }
+
+
 }
