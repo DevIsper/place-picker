@@ -53,4 +53,11 @@ export class AvailablePlacesComponent implements OnInit {
   }
 
 
+  onSelectPlace(p: Place) {
+    this.httpClient.put('http://localhost:3000/user-places', {
+      placeId: p.id,
+    }).subscribe({
+      next: (place) => {console.log(place)}
+    });
+  }
 }
