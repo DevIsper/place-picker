@@ -3,8 +3,7 @@ import {Component, DestroyRef, inject, Input, OnInit, signal} from '@angular/cor
 import { PlacesContainerComponent } from '../places-container/places-container.component';
 import { PlacesComponent } from '../places.component';
 import {Place} from "../place.model";
-import {HttpClient} from "@angular/common/http";
-import {catchError, map, throwError} from "rxjs";
+import {PlacesService} from "../places.service";
 
 @Component({
   selector: 'app-user-places',
@@ -15,34 +14,39 @@ import {catchError, map, throwError} from "rxjs";
 })
 export class UserPlacesComponent implements OnInit {
 
-  httpClient = inject(HttpClient);
   destroyRef = inject(DestroyRef);
+  placesService = inject(PlacesService);
 
   places = signal<Place[] | undefined>(undefined)
-  error = signal("");
   isFetching = signal(false);
+  error = signal('')
 
   ngOnInit(): void {
     this.isFetching.set(true);
-    const sub = this.httpClient
-      .get<{ places: Place[] }>('http://localhost:3000/user-places')
-      .pipe(
-        map(resData => resData.places),
-        catchError((err) => throwError(() =>
-          new Error("Ocorreu um erro.")))
-      )
+    const sub = this.placesService.loadUserPlaces()
       .subscribe({
         next: (places: Place[]) => {
           this.places.set(places)
         },
-        complete: () => {this.isFetching.set(false);},
-        error: (err: Error) => {this.error.set(err.message);}
+        complete: () => {this.isFetching.set(false)},
+        error: (error: Error) => {this.error.set(error.message)}
       })
 
     this.destroyRef.onDestroy(sub.unsubscribe);
   }
 
-  onSelectPlace($event: Place) {
-
+  onSelectPlace(p: Place) {
+    this.isFetching.set(true);
+    this.placesService.removeUserPlace(p)
+      .subscribe({
+        next: () => {
+          this.places.set(
+            this.places()!.filter(
+              place => place.id !== p.id
+            )
+          );
+          },
+        complete: () => {this.isFetching.set(false)}
+      })
   }
 }
