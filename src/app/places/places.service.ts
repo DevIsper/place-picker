@@ -3,16 +3,16 @@ import {inject, Injectable, signal} from '@angular/core';
 import { Place } from './place.model';
 import {catchError, map, tap, throwError} from "rxjs";
 import {HttpClient} from "@angular/common/http";
+import {ErrorService} from "../shared/error.service";
 
 @Injectable({
   providedIn: 'root',
 })
 export class PlacesService {
 
-  httpClient = inject(HttpClient)
-
+  private httpClient = inject(HttpClient)
+  private errorService = inject(ErrorService);
   private userPlaces = signal<Place[]>([]);
-
   loadedUserPlaces = this.userPlaces.asReadonly();
 
   loadAvailablePlaces() {
@@ -30,12 +30,19 @@ export class PlacesService {
 
   addPlaceToUserPlaces(place: Place) {
 
+    let prevPlaces = this.userPlaces();
+
     if(!this.userPlaces().some((p: Place) => place.id === p.id)) {
       this.userPlaces.update((prevPlaces => [...prevPlaces, place]));
 
       this.httpClient.put('http://localhost:3000/user-places', {
         placeId: place.id,
-      }).subscribe();
+      }).subscribe({
+        error: () => {
+          this.userPlaces.set(prevPlaces)
+          this.errorService.showError("ERROR N. 9123919951923912R91923192399 CALL IMEDIATE SUPPORT!!!!!!!!!");
+        }
+      });
     }
   }
 
