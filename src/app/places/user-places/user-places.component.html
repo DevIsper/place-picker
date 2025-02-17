@@ -8,9 +8,9 @@
     <p class="fallback-text">{{error()}}</p>
   }
 
-  @if (places()) {
+  @if (places()?.length !== 0) {
     <app-places [places]="places()!" (selectPlace)="onSelectPlace($event)" />
-  } @else if (places()?.length === 0) {
+  } @else if (places()?.length === 0 && !isFetching()) {
     <p class="fallback-text">You have not selected any place yet.</p>
   }
 

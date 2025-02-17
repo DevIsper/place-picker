@@ -17,7 +17,7 @@ export class UserPlacesComponent implements OnInit {
   destroyRef = inject(DestroyRef);
   placesService = inject(PlacesService);
 
-  places = signal<Place[] | undefined>(undefined)
+  places = this.placesService.loadedUserPlaces;
   isFetching = signal(false);
   error = signal('')
 
@@ -25,8 +25,8 @@ export class UserPlacesComponent implements OnInit {
     this.isFetching.set(true);
     const sub = this.placesService.loadUserPlaces()
       .subscribe({
-        next: (places: Place[]) => {
-          this.places.set(places)
+        next: (places) => {
+          console.log(this.placesService.loadedUserPlaces);
         },
         complete: () => {this.isFetching.set(false)},
         error: (error: Error) => {this.error.set(error.message)}
@@ -39,13 +39,6 @@ export class UserPlacesComponent implements OnInit {
     this.isFetching.set(true);
     this.placesService.removeUserPlace(p)
       .subscribe({
-        next: () => {
-          this.places.set(
-            this.places()!.filter(
-              place => place.id !== p.id
-            )
-          );
-          },
         complete: () => {this.isFetching.set(false)}
       })
   }

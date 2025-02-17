@@ -1,7 +1,7 @@
 import {inject, Injectable, signal} from '@angular/core';
 
 import { Place } from './place.model';
-import {catchError, map, throwError} from "rxjs";
+import {catchError, map, tap, throwError} from "rxjs";
 import {HttpClient} from "@angular/common/http";
 
 @Injectable({
@@ -21,16 +21,31 @@ export class PlacesService {
 
   loadUserPlaces() {
     return this.fetchPlaces("http://localhost:3000/user-places", "Something went wrong! Please try again later.")
+      .pipe(
+        tap({
+          next: (userPlaces) => {this.userPlaces.set(userPlaces)}
+        })
+      );
   }
 
   addPlaceToUserPlaces(place: Place) {
-    this.httpClient.put('http://localhost:3000/user-places', {
-      placeId: place.id,
-    }).subscribe();
+
+    if(!this.userPlaces().some((p: Place) => place.id === p.id)) {
+      this.userPlaces.update((prevPlaces => [...prevPlaces, place]));
+
+      this.httpClient.put('http://localhost:3000/user-places', {
+        placeId: place.id,
+      }).subscribe();
+    }
   }
 
-  removeUserPlace(place: Place) {
-    return this.httpClient.delete('http://localhost:3000/user-places/' + place.id, {});
+  removeUserPlace(p: Place) {
+    this.userPlaces.set(
+      this.userPlaces()
+        .filter((place) => place.id !== p.id)
+    );
+
+    return this.httpClient.delete('http://localhost:3000/user-places/' + p.id, {});
   }
 
   fetchPlaces(url : string, errorMessage : string) {
